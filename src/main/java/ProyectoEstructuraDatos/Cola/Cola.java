@@ -1,4 +1,7 @@
-package ProyectoEstructuraDatos;
+package ProyectoEstructuraDatos.Cola;
+
+import ProyectoEstructuraDatos.Nodo.Nodo;
+import ProyectoEstructuraDatos.Tiquete;
 
 public class Cola {
 

@@ -1,4 +1,6 @@
-package ProyectoEstructuraDatos;
+package ProyectoEstructuraDatos.Nodo;
+
+import ProyectoEstructuraDatos.Tiquete;
 
 public class Nodo {
 
