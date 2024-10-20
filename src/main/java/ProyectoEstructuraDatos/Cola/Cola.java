@@ -3,7 +3,7 @@ package ProyectoEstructuraDatos.Cola;
 import ProyectoEstructuraDatos.Nodo.Nodo;
 import ProyectoEstructuraDatos.Tiquete;
 
-public class Cola {
+public class  Cola {
 
     private Nodo primero, ultimo;
     private int cant = 0;
