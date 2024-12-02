@@ -1,84 +1,100 @@
 
 package ProyectoEstructuraDatos;
 
-import java.io.File;
+
 import javax.swing.*;
 import java.util.Date;
 
-
 public class GestionPrincipal {
-    public static void main(String[] args) {
-       
-        Caja caja1 = new Caja();
-        Caja caja2 = new Caja();
+    private static final String CONFIG_FILE = "prod.txt";
+    private static final String REPORT_FILE = "reportes.txt";
 
-        Archivo archivo = new Archivo();
-        File archivoTiquetes = archivo.crearArchivo("ListaTiquetes.txt");
-        if (archivoTiquetes == null) {
-            JOptionPane.showMessageDialog(null, "Error al crear el archivo", "Error", JOptionPane.ERROR_MESSAGE);
+    private static Caja colaTiquetes = new Caja();
+    private static Archivo archivo = new Archivo();
+
+    public static void main(String[] args) {
+        archivo.crearArchivo(CONFIG_FILE);
+        archivo.crearArchivo(REPORT_FILE);
+
+        while (true) {
+            String opcion = JOptionPane.showInputDialog(null, "Seleccione una opcion: \n"
+                    + "1. Crear Tiquete \n"
+                    + "2. Atender tiquete \n"
+                    + "3. Generar reporte \n"
+                    + "4. Salir");
+
+            if (opcion == null || opcion.equals("4")) {
+                guardarEstado();
+                JOptionPane.showMessageDialog(null, "Gracias por usar el sistema.");
+                break;
+            }
+
+            switch (opcion) {
+                case "1":
+                    crearTiquete();
+                    break;
+                case "2":
+                    atenderTiquete();
+                    break;
+                case "3":
+                    generarReporte();
+                    break;
+                default:
+                    JOptionPane.showMessageDialog(null, "Opcion invalida, intente nuevamente.");
+            }
+        }
+    }
+
+    private static void crearTiquete() {
+        String nombre = JOptionPane.showInputDialog(null, "Ingrese el nombre del cliente: ");
+        String id = JOptionPane.showInputDialog(null, "Ingrese el id del cliente:");
+        int edad = Integer.parseInt(JOptionPane.showInputDialog(null, "Ingrese la edad del cliente:"));
+        String tramite = JOptionPane.showInputDialog(null, "Ingrese el trámite que desea:");
+        String tipoInput = JOptionPane.showInputDialog(null, "Ingrese el tipo de tiquete (P, A, B):");
+
+        if (nombre == null || tipoInput == null || tipoInput.length() != 1) {
+            JOptionPane.showMessageDialog(null, "Datos inválidos, no se creó el tiquete.");
             return;
         }
 
-        // Limpiar el archivo
-        int resultadoSobreescribir = archivo.sobreEscribirArchivo(archivoTiquetes, "");
-        validarResultado("Limpieza del archivo", resultadoSobreescribir);
+        char tipo = Character.toUpperCase(tipoInput.charAt(0));
 
-        // Agregar un tiquete al archivo
-        Tiquete tiquete1 = new Tiquete("Juan", "123456", 30, new Date(), "Solicitud de permisos", 'A');
-        Tiquete tiquete2 = new Tiquete("Maria", "789012", 25, new Date(), "Consulta general", 'B');
-        Tiquete tiquete3 = new Tiquete("Carlos", "345678", 40, new Date(), "Pago de servicios", 'A');
-        
-        
-        int resultado1Agregar = archivo.agregarAlArchivo(archivoTiquetes, tiquete1);
-        validarResultado("Agregar tiquete al archivo", resultado1Agregar);
-        
-        int resultado2Agregar = archivo.agregarAlArchivo(archivoTiquetes, tiquete2);
-        validarResultado("Agregar tiquete al archivo", resultado2Agregar);
-        
-        int resultado3Agregar = archivo.agregarAlArchivo(archivoTiquetes, tiquete3);
-        validarResultado("Agregar tiquete al archivo", resultado3Agregar);
-        
-        
-        
-        // Asigna a cajas
-        asignarTiqueteACaja(tiquete1, caja1, caja2);
-        asignarTiqueteACaja(tiquete2, caja1, caja2);
-        asignarTiqueteACaja(tiquete3, caja1, caja2);
-
-        // Leer archivo
-        String lect = archivo.leerArchivo(archivoTiquetes);
-        if (lect.isEmpty()) {
-            JOptionPane.showMessageDialog(null, "No se pudo leer el archivo o esta vacio", "Warning",
-                    JOptionPane.WARNING_MESSAGE);
-        } else {
-            // Mostrar el contenido del archivo en un JOptionPane
-            JOptionPane.showMessageDialog(null, formatArchivoParaMostrar(lect), "Contenido del Archivo",
-                    JOptionPane.INFORMATION_MESSAGE);
+        if (tipo != 'P' && tipo != 'A' && tipo != 'B') {
+            JOptionPane.showMessageDialog(null, "Tipo de tiquete inválido. Use P, A o B.");
+            return;
         }
 
-        // Atiende tiquetes
-        caja1.finalizarAtencion();
-        caja2.finalizarAtencion();
+        Tiquete nuevoTiquete = new Tiquete(nombre, id, edad, new Date(), tramite, tipo);
+        colaTiquetes.agregarTiquete(nuevoTiquete);
+        validarResultado("Creación de tiquete", 1);
     }
 
-    private static void asignarTiqueteACaja(Tiquete tiquete, Caja caja1, Caja caja2) {
-        // Asigna al primer cajero disponible
-        if (!caja1.estaOcupada()) {
-            caja1.agregarTiquete(tiquete);
-            JOptionPane.showMessageDialog(null, "Cliente asignado a la Caja 1");
-        } else if (!caja2.estaOcupada()) {
-            caja2.agregarTiquete(tiquete);
-            JOptionPane.showMessageDialog(null, "Cliente asignado a la Caja 2");
+
+    private static void atenderTiquete() {
+        Tiquete tiqueteAtendido = colaTiquetes.atenderTiquete();
+        if (tiqueteAtendido == null) {
+            validarResultado("Atencion de tiquete", 0);
         } else {
-            // Si ambos están ocupados, asignar al que tenga menos en cola
-            if (caja1.getColaSize() <= caja2.getColaSize()) {
-                caja1.agregarTiquete(tiquete);
-                JOptionPane.showMessageDialog(null, "Cliente asignado a la Caja 1");
-            } else {
-                caja2.agregarTiquete(tiquete);
-                JOptionPane.showMessageDialog(null, "Cliente asignado a la Caja 2");
-            }
+            JOptionPane.showMessageDialog(null, "Atendiendo a: " + tiqueteAtendido);
+            archivo.agregarAlArchivo(new java.io.File(REPORT_FILE), tiqueteAtendido.toString());
+            validarResultado("Atencion de tiquete", 1);
         }
+    }
+
+
+
+    private static void generarReporte() {
+        String reporte = archivo.leerArchivo(new java.io.File(REPORT_FILE));
+        if (reporte.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No hay reportes disponibles.");
+        } else {
+            String reporteFormateado = formatArchivoParaMostrar(reporte);
+            JOptionPane.showMessageDialog(null, reporteFormateado);
+        }
+    }
+
+    private static void guardarEstado() {
+        // Lógica para guardar el estado actual de las colas (si aplica)
     }
 
     // Con este método validamos y mostramos el resultado de las operaciones con los archivos
@@ -92,7 +108,8 @@ public class GestionPrincipal {
             JOptionPane.showMessageDialog(null, mensaje, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    // Con este metodo muestro los tiquetes agregados en un ofrmato agradable a la vista
+
+    // Con este metodo muestro los tiquetes agregados en un formato agradable a la vista
     private static String formatArchivoParaMostrar(String texto) {
         StringBuilder formato = new StringBuilder();
         formato.append("===========================================================\n");
@@ -104,3 +121,15 @@ public class GestionPrincipal {
         return formato.toString();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+

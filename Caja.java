@@ -65,6 +65,26 @@ public class Caja {
         }
     }
 
+    public Tiquete atenderTiquete() {
+        if (ocupada) {
+            System.out.println("La caja está ocupada atendiendo a otro cliente.");
+            return null;
+        }
+
+        if (colaTiquetes.estaVacia()) {
+            System.out.println("No hay tiquetes en la cola para atender.");
+            return null;
+        }
+
+        Tiquete tiqueteAtendido = atenderSiguiente();
+        if (tiqueteAtendido != null) {
+            System.out.println("Atendiendo tiquete: " + tiqueteAtendido);
+        }
+
+        return tiqueteAtendido;
+    }
+
+
     public boolean estaOcupada() {
         return ocupada;
     }
