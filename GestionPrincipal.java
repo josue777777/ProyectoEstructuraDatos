@@ -6,22 +6,66 @@ import javax.swing.*;
 import java.util.Date;
 
 public class GestionPrincipal {
-    private static final String CONFIG_FILE = "prod.txt";
-    private static final String REPORT_FILE = "reportes.txt";
+    
+  
 
     private static Caja colaTiquetes = new Caja();
     private static Archivo archivo = new Archivo();
+    private static String nombreBanco;
+    private static int cantidadCajas;
 
     public static void main(String[] args) {
-        archivo.crearArchivo(CONFIG_FILE);
-        archivo.crearArchivo(REPORT_FILE);
+        archivo.crearArchivo("prod.txt");
+        archivo.crearArchivo("reportes.txt");
 
+        if (!cargarConfiguracion()) {
+            configurarSistema();
+        }
+
+        mostrarMenu();
+    }
+
+    private static boolean cargarConfiguracion() {
+        String config = archivo.leerArchivo(new java.io.File("prod.txt"));
+        if (config == null || config.isEmpty()) {
+            return false;
+        }
+
+        String[] datos = config.split(",");
+        if (datos.length == 2) {
+            nombreBanco = datos[0];
+            cantidadCajas = Integer.parseInt(datos[1]);
+            return true;
+        }
+        return false;
+    }
+
+    private static void configurarSistema() {
+        nombreBanco = JOptionPane.showInputDialog(null, "Ingrese el nombre del banco:");
         while (true) {
-            String opcion = JOptionPane.showInputDialog(null, "Seleccione una opcion: \n"
-                    + "1. Crear Tiquete \n"
-                    + "2. Atender tiquete \n"
-                    + "3. Generar reporte \n"
-                    + "4. Salir");
+            try {
+                cantidadCajas = Integer.parseInt(JOptionPane.showInputDialog(null, "Ingrese la cantidad de cajas:"));
+                if (cantidadCajas > 0) {
+                    break;
+                }
+                JOptionPane.showMessageDialog(null, "Por favor, ingrese un número positivo.");
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Por favor, ingrese un número válido.");
+            }
+        }
+
+        archivo.agregarAlArchivo(new java.io.File("prod.txt"), nombreBanco + "," + cantidadCajas);
+        JOptionPane.showMessageDialog(null, "Configuración guardada exitosamente.");
+    }
+
+    private static void mostrarMenu() {
+        while (true) {
+            String opcion = JOptionPane.showInputDialog(null, "Banco: " + nombreBanco + 
+                "\nSeleccione una opcion: \n"
+                + "1. Crear Tiquete \n"
+                + "2. Atender tiquete \n"
+                + "3. Generar reporte \n"
+                + "4. Salir");
 
             if (opcion == null || opcion.equals("4")) {
                 guardarEstado();
@@ -29,18 +73,14 @@ public class GestionPrincipal {
                 break;
             }
 
-            switch (opcion) {
-                case "1":
-                    crearTiquete();
-                    break;
-                case "2":
-                    atenderTiquete();
-                    break;
-                case "3":
-                    generarReporte();
-                    break;
-                default:
-                    JOptionPane.showMessageDialog(null, "Opcion invalida, intente nuevamente.");
+            if (opcion.equals("1")) {
+                crearTiquete();
+            } else if (opcion.equals("2")) {
+                atenderTiquete();
+            } else if (opcion.equals("3")) {
+                generarReporte();
+            } else {
+                JOptionPane.showMessageDialog(null, "Opcion invalida, intente nuevamente.");
             }
         }
     }
@@ -48,7 +88,13 @@ public class GestionPrincipal {
     private static void crearTiquete() {
         String nombre = JOptionPane.showInputDialog(null, "Ingrese el nombre del cliente: ");
         String id = JOptionPane.showInputDialog(null, "Ingrese el id del cliente:");
-        int edad = Integer.parseInt(JOptionPane.showInputDialog(null, "Ingrese la edad del cliente:"));
+        int edad;
+        try {
+            edad = Integer.parseInt(JOptionPane.showInputDialog(null, "Ingrese la edad del cliente:"));
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Edad inválida, no se creó el tiquete.");
+            return;
+        }
         String tramite = JOptionPane.showInputDialog(null, "Ingrese el trámite que desea:");
         String tipoInput = JOptionPane.showInputDialog(null, "Ingrese el tipo de tiquete (P, A, B):");
 
@@ -66,30 +112,33 @@ public class GestionPrincipal {
 
         Tiquete nuevoTiquete = new Tiquete(nombre, id, edad, new Date(), tramite, tipo);
         colaTiquetes.agregarTiquete(nuevoTiquete);
-        validarResultado("Creación de tiquete", 1);
+        JOptionPane.showMessageDialog(null, "Tiquete creado exitosamente.");
     }
-
 
     private static void atenderTiquete() {
         Tiquete tiqueteAtendido = colaTiquetes.atenderTiquete();
         if (tiqueteAtendido == null) {
-            validarResultado("Atencion de tiquete", 0);
+            JOptionPane.showMessageDialog(null, "No hay tiquetes en la cola para atender.");
         } else {
             JOptionPane.showMessageDialog(null, "Atendiendo a: " + tiqueteAtendido);
-            archivo.agregarAlArchivo(new java.io.File(REPORT_FILE), tiqueteAtendido.toString());
-            validarResultado("Atencion de tiquete", 1);
+            archivo.agregarAlArchivo(new java.io.File("reportes.txt"), tiqueteAtendido.toString());
         }
     }
 
-
-
     private static void generarReporte() {
-        String reporte = archivo.leerArchivo(new java.io.File(REPORT_FILE));
+        String reporte = archivo.leerArchivo(new java.io.File("reportes.txt"));
         if (reporte.isEmpty()) {
             JOptionPane.showMessageDialog(null, "No hay reportes disponibles.");
         } else {
-            String reporteFormateado = formatArchivoParaMostrar(reporte);
-            JOptionPane.showMessageDialog(null, reporteFormateado);
+            String encabezado = "Reporte generado el: " + new Date() + "\n";
+            StringBuilder contenido = new StringBuilder();
+            contenido.append("===========================================================\n");
+            contenido.append("                INFORME DE TIQUETES                       \n");
+            contenido.append("===========================================================\n");
+            contenido.append("|    Nombre    |    ID    |    Edad    |    Fecha    |    Tramite    |    Tipo    |\n");
+            contenido.append(reporte);
+            contenido.append("===========================================================\n");
+            JOptionPane.showMessageDialog(null, encabezado + contenido.toString());
         }
     }
 
